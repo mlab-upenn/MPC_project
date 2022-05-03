@@ -102,8 +102,8 @@ class FTOCPNLP(object):
 
     def dyModel(self, x, u):
 
-        lf = 1.75  # 0.125
-        lr = 0.75  # 0.125
+        lf = 0.125
+        lr = 0.125
         beta = np.arctan(lr / (lr + lf) * np.tan(u[1]))
 
         x_next = x[0] + self.dt * x[2] * np.cos(x[3] + beta)
