@@ -5,15 +5,9 @@ import itertools
 import numpy as np
 from cvxpy import *
 
-##### MY CODE ######
-class FTOCP(object):
-	""" Finite Time Optimal Control Problem (FTOCP)
-	Methods:
-		- solve: solves the FTOCP given the initial condition x0 and terminal contraints
-		- buildNonlinearProgram: builds the nonlinear program solved by the above solve methos
-		- model: given x_t and u_t computes x_{t+1} = Ax_t + Bu_t
 
-	"""
+class FTOCP(object):
+
 	def __init__(self, N, roadHalfWidth):
 		# Define variables
 		self.N = N
@@ -106,10 +100,10 @@ class FTOCP(object):
 					self.feasible = 0
 
 
-		# Check if LMPC cost is decreasing (it should as it is a Lyap function)
+		# Check if LMPC cost is decreasing (it should as it is a Lyapunov function)
 		if np.min(costSolved) > self.optCost:
 			print("Cost not decreasing: ", self.optCost, np.min(costSolved))
-			# pdb.set_trace()
+			# Fix the case if unsuccessful trajectory occurs
 			print("Cost is not decreasing.")
 			for j in range(0, self.N + 1):
 				del costSolved[j]
