@@ -1,1 +1,1 @@
-LMPC for Dubin car including additiona tracking schemes.
+LMPC for Dubin car, which includes additiona tracking schemes.
