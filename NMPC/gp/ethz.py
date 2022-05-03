@@ -1,6 +1,5 @@
-"""	Tracks in Automatic Control Lab at ETH Zurich.
-	Source: https://github.com/alexliniger/MPCC/tree/master/Matlab/Tracks
-"""
+### Tracks in Automatic Control Lab at ETH Zurich.
+### Source: https://github.com/alexliniger/MPCC/tree/master/Matlab/Tracks
 
 import os
 import numpy as np
@@ -25,7 +24,6 @@ def Projection(point, line):
     dir2 = (proj - x1)
     dir3 = (proj - x2)
 
-    # check if this point is on the line, otw return closest vertex
     if np.linalg.norm(dir2, 2) > 0 and np.linalg.norm(dir3, 2) > 0:
         dir2 /= np.linalg.norm(dir2)
         dir3 /= np.linalg.norm(dir3)
@@ -40,9 +38,6 @@ def Projection(point, line):
 
 
 class Spline:
-    u"""
-    Cubic Spline class
-    """
 
     def __init__(self, x, y):
         self.b, self.c, self.d, self.w = [], [], [], []
@@ -90,12 +85,6 @@ class Spline:
         return result
 
     def calcd(self, t):
-        u"""
-        Calc first derivative
-
-        if t is outside of the input x, return None
-        """
-
         if t < self.x[0]:
             return None
         elif t > self.x[-1]:
@@ -107,10 +96,6 @@ class Spline:
         return result
 
     def calcdd(self, t):
-        u"""
-        Calc second derivative
-        """
-
         if t < self.x[0]:
             return None
         elif t > self.x[-1]:
@@ -122,15 +107,9 @@ class Spline:
         return result
 
     def __search_index(self, x):
-        u"""
-        search data segment index
-        """
         return bisect.bisect(self.x, x) - 1
 
     def __calc_A(self, h):
-        u"""
-        calc matrix A for spline coefficient c
-        """
         A = np.zeros((self.nx, self.nx))
         A[0, 0] = 1.0
         for i in range(self.nx - 1):
@@ -142,13 +121,9 @@ class Spline:
         A[0, 1] = 0.0
         A[self.nx - 1, self.nx - 2] = 0.0
         A[self.nx - 1, self.nx - 1] = 1.0
-        #  print(A)
         return A
 
     def __calc_B(self, h):
-        u"""
-        calc matrix B for spline coefficient c
-        """
         B = np.zeros(self.nx)
         for i in range(self.nx - 2):
             B[i + 1] = 3.0 * (self.a[i + 2] - self.a[i + 1]) / \
@@ -158,11 +133,6 @@ class Spline:
 
 
 class Spline2D:
-    u"""
-    2D Cubic Spline class
-
-    """
-
     def __init__(self, x, y):
         self.s = self.__calc_s(x, y)
         self.sx = Spline(self.s, x)
@@ -178,18 +148,12 @@ class Spline2D:
         return s
 
     def calc_position(self, s):
-        u"""
-        calc position
-        """
         x = self.sx.calc(s)
         y = self.sy.calc(s)
 
         return x, y
 
     def calc_curvature(self, s):
-        u"""
-        calc curvature
-        """
         dx = self.sx.calcd(s)
         ddx = self.sx.calcdd(s)
         dy = self.sy.calcd(s)
@@ -198,9 +162,6 @@ class Spline2D:
         return k
 
     def calc_yaw(self, s):
-        u"""
-        calc yaw
-        """
         dx = self.sx.calcd(s)
         dy = self.sy.calcd(s)
         yaw = math.atan2(dy, dx)
@@ -223,24 +184,18 @@ def calc_spline_course(x, y, ds=0.1):
 
 
 class Track:
-    """	Base class for all tracks"""
-
     def __init__(self):
         self._calc_center_line()
         self._calc_track_length()
         self._calc_theta_track()
 
     def _calc_center_line(self):
-        """	center line of dimension 2xn
-        """
         self.center_line = np.concatenate([
             self.x_center.reshape(1, -1),
             self.y_center.reshape(1, -1)
         ])
 
     def _calc_track_length(self):
-        """	calculate track length using (x,y) for center line
-        """
         center = self.center_line
         # connect first and last point
         center = np.concatenate([center, center[:, 0].reshape(-1, 1)], axis=1)
@@ -248,23 +203,16 @@ class Track:
         self.track_length = np.sum(np.linalg.norm(diff, 2, axis=0))
 
     def _calc_raceline_length(self, raceline):
-        """	calculate length of raceline
-        """
-        # connect first and last point
         raceline = np.concatenate([raceline, raceline[:, 0].reshape(-1, 1)], axis=1)
         diff = np.diff(raceline)
         return np.sum(np.linalg.norm(diff, 2, axis=0))
 
     def _calc_theta_track(self):
-        """	calculate theta for the center line
-        """
         diff = np.diff(self.center_line)
         theta_track = np.cumsum(np.linalg.norm(diff, 2, axis=0))
         self.theta_track = np.concatenate([np.array([0]), theta_track])
 
     def _load_raceline(self, wx, wy, n_samples, v=None, t=None):
-        """	load raceline and fit cubic splines
-        """
         self.spline = Spline2D(wx, wy)
         x, y = wx, wy
         theta = self.spline.s
@@ -279,12 +227,8 @@ class Track:
             self.spline_v = Spline(theta, v)
 
     def _fit_cubic_splines(self, wx, wy, n_samples):
-        """	fit cubic splines on waypoints
-        """
         sp = Spline2D(wx, wy)
         self.spline = sp
-        # raceline = np.concatenate([[wx],[wy]])
-        # raceline_length = self._calc_raceline_length(raceline)
         s = np.linspace(0, sp.s[-1] - 0.001, n_samples)
         x, y = [], []
         for i_s in s:
@@ -466,9 +410,6 @@ class ETHZTrack(Track):
 
 
 class ETHZ(ETHZTrack):
-    """	ETHZ track
-    """
-
     def __init__(self, reference='center', longer=False):
         track_width = 0.37
         super(ETHZ, self).__init__(
