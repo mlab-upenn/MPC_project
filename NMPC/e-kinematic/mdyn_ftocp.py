@@ -79,10 +79,6 @@ class NFTOCPNLP(object):
 
         for i in range(0, self.N):
             X_next = self.ekinematic(X[n * i:n * (i + 1)], U[d * i:d * (i + 1)])
-            # if i < 19:
-            #     X_next = self.NonLinearBicycleModel(X[n * i:n * (i + 1)], U[d * i:d * (i + 1)])
-            # else:
-            #     X_next = self.KinematicModel(X[n * i:n * (i + 1)], U[d * i:d * (i + 1)])
             for j in range(0, self.n):
                 self.constraint = vertcat(self.constraint, X_next[j] - X[n * (i + 1) + j])
 
@@ -102,60 +98,6 @@ class NFTOCPNLP(object):
         # Set lower bound of inequality constraint to zero to force n*N state dynamics
         self.lbg_dyanmics = [0] * (n * self.N)
         self.ubg_dyanmics = [0] * (n * self.N)
-
-    def NonLinearBicycleModel(self, x, u):
-        m = 1.98  # 1.98
-        lf = 0.125
-        lr = 0.125
-        Iz = 0.024  # 0.024
-        Df = 0.8 * m * 9.81 / 2.0  # 0.8
-        Cf = 1.25  # 1.25
-        Bf = 1.0  # 1.0
-        Dr = 0.8 * m * 9.81 / 2.0  # 0.8
-        Cr = 1.25  # 1.25
-        Br = 1.0  # 1.0
-        a = u[0]
-        steer = u[1]
-        x[3] = x[3] + 0.000001
-
-        alpha_f = steer - np.arctan2(x[4] + lf * x[2], x[3])
-        alpha_r = - np.arctan2(x[4] - lf * x[2], x[3])
-
-        Fyf = Df * np.sin(Cf * np.arctan(Bf * alpha_f))
-        Fyr = Dr * np.sin(Cr * np.arctan(Br * alpha_r))
-
-        x_next = x[0] + self.dt * (x[3] * np.cos(x[2]) - x[4] * np.sin(x[2]))
-        y_next = x[1] + self.dt * (x[3] * np.sin(x[2]) + x[4] * np.cos(x[2]))
-        theta_next = x[2] + self.dt * x[5]
-        # theta_next = if_else(theta_next > np.pi, -2.0 * np.pi, if_else(theta_next < -np.pi, +2.0 * np.pi, theta_next))
-        vx_next = x[3] + self.dt * (a - 1 / m * Fyf * np.sin(steer) + x[4] * x[5])
-        vy_next = x[4] + self.dt * (1 / m * (Fyf * np.cos(steer) + Fyr) - x[3] * x[5])
-        yaw_next = x[5] + self.dt * (1 / Iz * (lf * Fyf * np.cos(steer) - Fyr * lr))
-
-        state_next = [x_next, y_next, theta_next, vx_next, vy_next, yaw_next]
-
-        return state_next
-
-    def KinematicModel(self, x, u):
-        lf = 0.125
-        lr = 0.125
-        a = u[0]
-        steer = u[1]
-        beta = np.arctan(lr / (lr + lf) * np.tan(steer))
-        x[3] = x[3] + 0.000001
-        su = x[3] * x[3] + x[4] * x[4]
-        vel = np.sqrt(su)
-
-        x_next = x[0] + self.dt * a * np.cos(x[2] + beta)
-        y_next = x[1] + self.dt * a * np.sin(x[2] + beta)
-        theta_next = x[2] + self.dt * a / lr * np.sin(beta)
-        vx_next = x[3] - self.dt * vel * np.sin(beta) / lr * np.sin(x[2] + beta)
-        vy_next = x[4] + self.dt * vel * np.sin(beta) / lr * np.cos(x[2] + beta)
-        yaw_next = x[5] + self.dt * vel * np.sin(beta) / lr
-
-        state_next = [x_next, y_next, theta_next, vx_next, vy_next, yaw_next]
-
-        return state_next
 
     def ekinematic(self, x, u):
         lf = 0.125
